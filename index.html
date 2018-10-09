@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <title>Узнать погоду</title>
+  </head>
+
+  <body class="notranslate">
+
+    <div class="container text-center main">
+      <h1>Какая погода в ... ?</h1>
+        <form>
+          <label for="city">Введите имя города</label>
+          <input type="text" class="form-control mb-2 mr-sm-2" id="inpCity" placeholder="например, Токио">
+          <button type="submit" id="citySubmit" class="btn btn-primary mb-2">Узнать</button>
+        </form> 
+      
+      <div class="cssload-container" id="preloader">
+        <div class="cssload-whirlpool"></div>
+      </div>
+
+        <div class="alert" id="resDiv"></div> 
+
+      <div class="row info">
+        <p>Используются данные API OpenWeatherMap
+          <a href="https://api.openweathermap.org">https://api.openweathermap.org</a>
+        </p>
+        <p>При поиске имена городов автоматически переводятся на английский язык с помощью сервиса API Яндекс-переводчика
+          <a href="http://translate.yandex.ru/">http://translate.yandex.ru/</a>
+        </p> 
+      </div>
+      <p class="text-center info">Написано с помощью Bootstrap, JQuery. <br>Copyright(C) <a href="https://github.com/Slider7"> К.Шлембаев 2018</a></p>
+    </div>
+
+
+
+
+
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+  
+    <script type="text/javascript">
+      $("#preloader").hide();
+
+
+        $("#citySubmit").on("click", function(event) {
+          $("#preloader").show();
+          setTempData($("#inpCity").val());
+          event.preventDefault();
+        });
+        
+        function setTempData(aCity){
+          var translateURL ="https://translate.yandex.net/api/v1.5/tr.json/translate?key=trnsl.1.1.20180928T021857Z.fb1ea46c68cf7dc1.a87b4c893a5a28f22589661c36ac924e69f44918&text=" + aCity + "&lang=ru-en";
+          $.getJSON(translateURL, {})/*запрос к переводчику*/
+            .done(/*запрос к переводчику прошел успешно*/
+              function( data ) {
+                var api = 'https://api.openweathermap.org/data/2.5/weather?q=' + encodeURI(data.text[0]) 
+                  + '&units=metric&APPID=07ff7084cbd1846660b079919af8c909&lang=ru';
+                $.getJSON(api, {})/*запрос к OpenWeatherMap*/
+                  .done(/*запрос к OpenWeatherMap успешен*/
+                    function( wData ) {
+                      var tempC= wData.main.temp;
+                      var hum = wData.main.humidity;
+                      var cdate = new Date(wData.dt);
+                      var wType= wData.weather[0].description;
+                      var sWind= wData.wind.speed;
+                      var cityN= wData.name;
+                      var tUnit = "C";
+                      var tempData = "В настоящее время в г." + aCity + " " + wType + ". Температура " + tempC + "&deg;C, скорость ветра " + sWind +"м/с. Влажность воздуха " + hum + "%."
+                      var pName = wData.weather[0].icon;
+                      /*console.log(wData);*/
+                      tempData += '<br><img class="img-responsive thumbnail" src="https://openweathermap.org/img/w/' + pName + '.png">';
+                      $("#resDiv").html('<div class="alert alert-success" role="alert">' + tempData + '</div>');
+                      $("#preloader").hide();
+                    }). 
+                      fail(
+                        function( jqxhr, textStatus, error ) {
+                          var err = textStatus + ', ' + error;
+                          $("#resDiv").html('<div class="alert alert-danger" role="alert">Ошибка получения данных, проверьте введенное имя города.</div>');
+                          console.log("Ошибка запроса: " + err);
+                          $("#preloader").hide();
+                        });
+
+              })
+            .fail(
+              function( jqxhr, textStatus, error ) {
+                var err = textStatus + ', ' + error;
+                $("#resDiv").html('<div class="alert alert-danger" role="alert">Ошибка при переводе имени на английский язык, проверьте введенное имя города.</div>');
+                console.log("Ошибка запроса переводчика: " + err);
+                $("#preloader").hide();
+              });
+        };
+
+    </script> 
+
+  </body>
+</html>
